@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+        <h1>
+            这是Vue组件
+        </h1>
+        <h2>现在测试服务器以及后台数据...</h2>
+        <h2>没有创建公有组件</h2>
+
+    </div>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="js/axios.js"></script>
+
+    <script>
+        axios.defaults.baseURL = 'http://localhost:3030'
+        // axios响应拦截器
+        axios.interceptors.response.use(function(res){
+            return res.data
+            console.log(res.data)
+        }, function(error){
+            console.log(data)
+        })
+      
+        var vm = new Vue({
+            el: '#app',
+            data: {
+            },
+            methods: {
+                queryData: async function(){
+                    this.test = await axios.get('test')
+                    console.log(this.test)
+
+                }
+            },
+            mounted: function() {
+                this.queryData()
+
+            },
+        })
+    </script>
+</body>
+</html>'

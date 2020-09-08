@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+
+<body>
+    <div id="app">
+
+        <div class="grid">
+            <div>
+                <h1>图书管理</h1>
+                <div class="book">
+                    <div>
+                        <span>图书总数：</span>
+                        <span>{{ total }}</span>
+                        &nbsp;&nbsp;&nbsp;&nbsp;
+                        <label for="id">编号：</label>
+                        <input style="height: 20px;" type="text" id="id" v-model='id' disabled='false' V-focus>
+                        <label for="name">名称：</label>
+                        <input style="height: 20px;" type="text" id="name" v-model='bookname'>
+                        <button @click='handle' :disabled='submitFlag'>提交</button>
+                    </div>
+                </div>
+            </div>
+            <table class="table table-hover" border="1" width='800'>
+                <thead>
+                    <tr>
+                        <th>编号</th>
+                        <th>名称</th>
+                        <th>时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr :key='item.id' v-for='item in books'>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.bookname }}</td>
+                        <td>{{ item.date | format }}</td>
+                        <td>
+                            <a href="" @click.prevent='toEdit(item.id)'>修改</a>
+                            <span>|</span>
+                            <a href="" @click.prevent='toDel(item.id)'>删除</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="js/axios.js"></script>
+    <script>
+        axios.defaults.baseURL = 'http://localhost:3030'
+        // axios响应拦截器
+        axios.interceptors.response.use(function(res){
+            return res.data
+        },function(error){
+            console.log(error)
+        })
+        // 全局自定义指令，焦点
+        Vue.directive('focus',{
+            inserted: function(el){
+                el.focus()
+            }
+        })
+        // 全局过滤器
+        Vue.filter('format', function(datestr){
+            var ds = new Date(datestr)
+            var y = ds.getFullYear()
+            var m = ds.getMonth() + 1
+            var d = ds.getDate()
+            var hh = ds.getHours()
+            var mm = ds.getMinutes()
+            var ss = ds.getSeconds()
+            return y+'-'+m+'-'+d+' '+hh+':'+mm+':'+ss
+            
+        })
+        var vm = new Vue({
+            el: '#app',
+            data: {
+                flag:false,
+                submitFlag:false,
+                id:'',
+                bookname:'',
+                books:[]
+            },
+            methods: {
+                handle: async function(){
+                   
+                   if(this.flag){
+                    // 编辑操作
+                    // 就是根据当前id去更新数组中对应的数据
+                    var ret = await axios.put('books/' + this.id,{
+                        bookname: this.bookname
+                    })
+                    if(ret.status == 200){
+                        this.queryData()
+                    }
+                    this.flag = false
+                //    添加图书
+                   }else{
+                       var ret = await axios.post('books',{
+                           bookname: this.bookname
+                       })
+                       if(ret.status == 200){
+                        //    重新加载数据
+                            this.queryData()
+                       }
+                   }
+                   this.id = this.bookname = ''
+                },
+
+                toEdit: async function(id){
+                    this.flag = true
+                    // 更具id查询出对应的图书信息
+                    var ret = await axios.get('books/' +id)
+                    this.id = ret.id
+                    this.bookname = ret.bookname
+                  
+                },
+                toDel: async function(id){
+                    var ret = await axios.delete('books/' + id)
+                    if(ret.status == 200){
+                        this.queryData()
+                    }
+
+                },
+                queryData: async function(){
+                    this.books = await axios.get('books')
+                }
+            },
+            computed: {
+                total: function(){
+                    return this.books.length
+                }
+            },
+            watch: {
+                bookname: async function(val){
+
+                    var ret = await axios.get('/books/book/' + this.bookname)
+
+                    if(ret.status == 1){
+                        this.submitFlag = true
+                    }else{
+                        this.submitFlag = false
+                    }
+
+                },
+                
+            },
+            mounted:function() {
+                this.queryData()
+            },
+        })
+    </script>
+</body>
+
+</html>
